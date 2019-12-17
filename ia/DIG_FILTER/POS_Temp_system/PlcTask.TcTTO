@@ -1,0 +1,25 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.0">
+  <Task Name="PlcTask" Id="{acc98142-d02d-4f03-902d-2fee827ff4ac}">
+    <!--CycleTime in micro seconds.-->
+    <CycleTime>10000</CycleTime>
+    <Priority>6</Priority>
+    <PouCall>
+      <Name>MAIN</Name>
+    </PouCall>
+    <PouCall>
+      <Name>SERVO_POS</Name>
+    </PouCall>
+    <PouCall>
+      <Name>HEATER_PROCESS</Name>
+    </PouCall>
+    <PouCall>
+      <Name>TANKLEVEL</Name>
+    </PouCall>
+    <TaskFBGuid>{70cb0dce-35b7-4580-a56a-ebab0509cb81}</TaskFBGuid>
+    <Fb_init>{defcaeae-c319-476a-8b40-7bb25315d866}</Fb_init>
+    <Fb_exit>{6343bb9f-db69-4fef-8e60-04b68a11271a}</Fb_exit>
+    <CycleUpdate>{93b8a55f-34e7-4edf-9264-b2c55628b80f}</CycleUpdate>
+    <PostCycleUpdate>{4677ae1e-7c44-4c9d-94e9-86d2c6ac6b99}</PostCycleUpdate>
+  </Task>
+</TcPlcObject>

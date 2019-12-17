@@ -1,0 +1,29 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.0">
+  <POU Name="FirstOrder" Id="{6e10a567-ce2b-41cb-a38e-86d277fe4bcc}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK FirstOrder
+VAR_INPUT
+	Gain: REAL;
+	Tconstant : REAL;
+	fBIn   : REAL;
+END_VAR
+VAR_OUTPUT
+	fBOut  : REAL;
+END_VAR
+VAR
+	ssy, Sy   :REAL;
+	Tsample: REAL := 0.01;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[// Euler Emulation 1st Order with 0.01 sec sampletime.
+sy := ( fBIn * Gain / Tconstant ) - ( fBOut / Tconstant ) ;
+fBOut := fBout + ( sy * Tsample ) ;]]></ST>
+    </Implementation>
+    <LineIds Name="FirstOrder">
+      <LineId Id="17" Count="0" />
+      <LineId Id="15" Count="0" />
+      <LineId Id="9" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

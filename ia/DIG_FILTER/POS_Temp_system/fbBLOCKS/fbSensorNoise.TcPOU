@@ -1,0 +1,39 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.0">
+  <POU Name="fbSensorNoise" Id="{fd77ca23-cff8-4766-99e1-8e930c6d0f01}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK fbSensorNoise
+VAR_INPUT
+	noise_enable:BOOL;
+END_VAR
+VAR_OUTPUT
+noise_level : REAL;	
+END_VAR
+VAR
+	fBNoise:FB_CTRL_NOISE_GENERATOR;
+	fbNoiseParams: ST_CTRL_NOISE_GENERATOR_PARAMS;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[// Generate noise for Sensors ( simulation ) 
+fbNoiseParams.tCtrlCycleTime := T#10MS ;
+fbNoiseParams.tTaskCycleTime := T#10MS ;
+fbNoiseParams.fAmplitude := 1.5 ;
+//
+noise_level:=0;
+IF Noise_enable THEN
+	fbNoise ( fManSyncValue := 1 , eMode := 2 , stParams := fbNoiseParams ) ;
+END_IF
+noise_level:=fbNoise.fOut;
+]]></ST>
+    </Implementation>
+    <LineIds Name="fbSensorNoise">
+      <LineId Id="24" Count="0" />
+      <LineId Id="15" Count="2" />
+      <LineId Id="20" Count="0" />
+      <LineId Id="19" Count="0" />
+      <LineId Id="21" Count="2" />
+      <LineId Id="9" Count="0" />
+      <LineId Id="18" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

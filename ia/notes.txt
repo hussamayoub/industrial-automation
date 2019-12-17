@@ -1,0 +1,2 @@
+make a state diagram to control the heater in open loop and the moton in closed loop with pid controller.
+

@@ -1,0 +1,89 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.0">
+  <POU Name="fBDISCRETE_PID" Id="{6d63eba5-46e9-49ad-b783-0b876d499556}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK fBDISCRETE_PID
+VAR_INPUT
+	Setpoint:REAL;         // SetPoint
+    Kp:REAL;               // Kp  Proportional gain
+	Ki:REAL;               // Ki  Integrated gain
+	Kd:REAL;               // Kd  Derivative gain
+	Nfilter:REAL;          // Lowpass Filter Coeff 
+	Yprocess :REAL;        // Process Output
+	PID_enable : BOOL;     // PId enable (closed loop )
+	MV_max_sat : REAL;     // Maximum Saturation
+	MV_min_sat : REAL;     // Minimum Saturation
+	xExt_Error  :BOOL;     // External error 
+END_VAR
+VAR_OUTPUT
+	MV_out: REAL;
+	Inposition:BOOL;     //  4% Settled 
+END_VAR
+VAR
+	T1:DWORD :=0;
+	T2:DWORD;
+	Perr, Perr1, Perr2 : REAL ;
+	A,B,C : REAL;
+	prevMV_out:REAL;
+	Tsample:REAL;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[//
+IF T1 = 0 THEN
+	MV_out:=0;     // no bias offset controller
+END_IF
+
+Tsample:=0.01;
+T1:=REAL_TO_DWORD(Tsample);
+Perr:= Setpoint - Yprocess; // Current error e[k]
+//
+// Constant Coefficients including the Parameters Kp , Ki, Kd and Tsample
+//        Your PID Controller algorithm starts here
+//
+//
+//
+//
+//   Mv_out:=                                  // PID Controller
+//
+MV_out:=  Kp * Perr;  // P-Controller
+
+// Update  samples 
+prevMV_out := MV_out; // prevMV_out = MV_out[k-1] 
+Perr2 := Perr1;       // e[k-2]
+Perr1 := Perr;        // e[k-1]
+
+//  PID  is not Enabled 
+IF NOT PID_enable THEN
+	MV_Out:= Setpoint;
+END_IF
+
+//    PID  output saturation 
+IF Mv_out < MV_min_sat THEN
+	Mv_out:= MV_min_sat;
+END_IF
+IF Mv_out >  MV_max_sat THEN
+	Mv_out:= MV_max_sat;
+END_IF
+//  PID Output = 0 on External Error <user defined>
+IF xExt_Error THEN
+	Mv_out:=0;
+END_IF]]></ST>
+    </Implementation>
+    <LineIds Name="fBDISCRETE_PID">
+      <LineId Id="177" Count="3" />
+      <LineId Id="184" Count="1" />
+      <LineId Id="276" Count="0" />
+      <LineId Id="186" Count="0" />
+      <LineId Id="280" Count="0" />
+      <LineId Id="187" Count="1" />
+      <LineId Id="191" Count="0" />
+      <LineId Id="277" Count="2" />
+      <LineId Id="192" Count="2" />
+      <LineId Id="200" Count="4" />
+      <LineId Id="207" Count="11" />
+      <LineId Id="96" Count="0" />
+      <LineId Id="249" Count="0" />
+      <LineId Id="246" Count="2" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

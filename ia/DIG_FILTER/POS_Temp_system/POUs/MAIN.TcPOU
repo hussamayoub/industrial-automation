@@ -1,0 +1,280 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.2">
+  <POU Name="MAIN" Id="{c14fdddc-a9e2-4b2f-95bf-7a35be57990b}" SpecialFunc="None">
+    <Declaration><![CDATA[PROGRAM MAIN
+VAR
+	PID_heater_enable: BOOL;  // PID Controller heater enabled ( Closed looop Control)
+	PID_Servo_enable: BOOL := TRUE;   // PID Controller heater enabled ( Closed looop Control)
+	pidServo  : fBDISCRETE_PID;
+	pidHeater : fBDISCRETE_PID;
+	States    : SeqState := SeqState.Ready;
+	Cmd_Servo : R_TRIG;
+	Cmd_Heater: R_TRIG;
+	Cmd_ProdStart : R_TRIG;
+	Cmd_ProdStop  : R_TRIG;
+	HeaterON	  : BOOL;
+	Rotation      : REAL;
+	ToUnloadTimer : TON;
+	TiMerToUnloadStart : BOOL;
+	Counter : DINT;
+	MoveTank : BOOL;
+	StateString : STRING;
+	
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[// Handling Buttons
+Cmd_ProdStart(CLK:= GVL_IO.StartPr); 							// Start Process
+Cmd_ProdStop(clk:=GVL_IO.StopPr);  								// Stop  Process
+Cmd_Servo(clk:=MoveTank);    									// Servo Command button for testing
+Cmd_Heater(clk:=GVL_IO.xPushButton2);   						// Heater Command button for testing
+IF GVL_IO.Stirrer THEN     										// used to increas a counter
+	Rotation := Rotation +5;									// used to rotate the stirrer in user interface
+END_IF
+
+IF Rotation = 359 THEN 											// if reached 360 degree reset
+	Rotation := 0;
+END_IF
+
+ToUnloadTimer(IN := TiMerToUnloadStart ,PT := T#20S ); 			// timer to unload
+// ================= START STATE SEQUENCE ======================
+//
+//   Your State machine program can be programmed here 
+//          following an example
+//
+
+CASE States OF                       							// Sequence State ( ready, etc etc etc )
+	SeqState.Ready:                  							// You can change the states if you want for your own convience
+		StateString := 'Ready!';
+		Counter := 0;											// sequence counter
+		HeaterON := FALSE;
+		IF GVL_IO.StartPr THEN 							// check if start button pressed
+			States := SeqState.Fill_A;							// go to state Fill A
+		END_IF
+		
+	SeqState.Fill_A:											// sequence state fill A
+		StateString := 'Fill A';
+		GVL_IO .ValveA:=TRUE;  									// open valve A				
+		IF NOT GVL_IO.Level_S2 THEN 							// check if level reached s2
+			GVL_IO.ValveA := FALSE;								//close valve A
+			Counter := Counter + 1;									// increase counter after full cycle
+			States := SeqState.Fill_B; 							// go to state Fill B
+		END_IF
+		
+	SeqState.Fill_B:											// sequence state B
+		StateString := 'Fill B';
+		GVL_IO.SetPointHeater := 75; 							// set heater to 75
+		HeaterON := TRUE;										//used in user interface to show heater lamp
+		GVL_IO.Stirrer := TRUE; 								// set stirrer on 
+		GVL_IO.ValveB := TRUE; 									// open valve B
+		IF NOT GVL_IO.Level_S3 THEN 							// check if level s3 reached
+			GVL_IO.ValveB := FALSE; 							// close valve B
+			States := SeqState.ToUnload; 						// go to TOUnload state
+		END_IF
+		
+	SeqState.ToUnload:											// sequence state TO Unload
+		StateString := 'To Unload';
+		TiMerToUnloadStart := TRUE;								// start ToUnloadTimer
+		IF ToUnloadTimer.Q AND (GVL_IO.Output_Heater > 74.5 AND GVL_IO.Output_Heater < 76.5)  THEN									// if timer reached 20 sec
+			TiMerToUnloadStart := FALSE;						// reset timer
+			States := SeqState.MovingToDrain;					//go to MOving To drain state
+		END_IF
+	
+	SeqState.MovingToDrain:										// sequence state moving to drain
+		StateString := 'Move To Drain';
+		MoveTank := TRUE;										// set move tank variable		
+		GVL_IO.SetPoint_ServoX := 30;							// move tank to set point 30
+		IF GVL_IO.Output_ServoX = 30 THEN						// if position reached
+			MoveTank := FALSE;									// set move tank variable
+			States := SeqState.Drain_1;							// go to drain 1 state
+		END_IF
+		
+	SeqState.Drain_1:											// sequence state drain1
+		StateString := 'Drain 1';
+		GVL_IO.ValveC := TRUE;									//open valve c
+		GVL_IO.SetPointHeater := 0;								//turn heater off
+		HeaterON := FALSE;										// handle user interface variable
+		IF GVL_IO.Level_S2 THEN									// if s2 level reached
+			States := SeqState.Drain_2;							// go to drain 2 state
+		END_IF
+		
+	SeqState.Drain_2:											//sequence state drain 2
+		StateString := 'Drain 2';
+		GVL_IO.Stirrer := FALSE;								// turn stirrer off
+		IF GVL_IO.Level_S1 THEN									// if level s1 reached
+			GVL_IO.ValveC := FALSE;								// close valve c 
+			States := SeqState.MovingToStart;					// move to start position
+		END_IF
+	
+	SeqState.MovingToStart: 									// sequence state move to start position
+		StateString := 'Move To Start';
+		MoveTank := TRUE;										// set move tank variable
+		GVL_IO.SetPoint_ServoX := 0;							// set servo point to 0
+		IF GVL_IO.Output_ServoX = 0 THEN						// if position 0 reached
+			MoveTank := FALSE;									// set move tank variable
+		IF Counter = 2 OR GVL_IO.StopPr THEN			
+			States := SeqState.Ready;
+		END_IF
+		ELSE IF Counter < 2 AND NOT GVL_IO.StopPr THEN 
+			States := SeqState.Fill_A;
+		
+		END_IF
+		END_IF
+	
+		
+		
+		
+//	
+//
+END_CASE
+//
+//
+
+// ================ END STATE SEQUENCES=========================
+// 
+
+
+// =====   Executing the PID Controllers for  Position and Heater.   ===========
+//==================================================================================
+//
+// *************  Servo with P- Controller only  **************
+//
+IF (MoveTank AND NOT GVL_IO.xGenCtrl_Error ) THEN
+	pidServo.Setpoint:=GVL_IO.SetPoint_ServoX;  // Setpoint Servo // put in states
+END_IF
+
+pidServo.Kp:= 0.1;       //  Kp parameter
+// pidServo.Ki:= xxx ; //  Ki parameter
+// pidServo.Kd:= xxx ; //  Kd parameter 
+
+pidServo.MV_max_sat:= 10;    // Maximum output PID to protect the Servo
+pidServo.MV_min_sat:= -10;  // Minimum output PID    ,,     ,,
+pidServo.xExt_Error:= Gvl_IO.xGenCtrl_Error;
+//
+pidServo.Yprocess:= LREAL_TO_REAL(GVL_IO.Output_ServoX);
+//
+pidServo(PID_enable:=PID_Servo_enable);  // Calling PID function Heater
+
+// *************   Heater with P- Controller only   **********************
+//
+IF HeaterON THEN
+   pidHeater.Setpoint:=GVL_IO.SetPointHeater;	
+END_IF
+IF HeaterON = FALSE THEN
+	pidHeater.Setpoint := 0;
+END_IF
+pidHeater.Kp:= 1;         //  Kp parameter
+// pidHeater.Ki:= xx ;    //  Ki parameter     
+// pidHeater.Kd:= xx ;    //  Kd parameter      
+pidHeater.MV_max_sat:=150;   // Maximum output PID to protect the Heater
+pidHeater.MV_min_sat:= -10;  // Minimum output PID ,,     ,,
+// 
+pidHeater.Yprocess:=GVL_IO.Output_Heater;
+
+pidHeater(PID_enable:= PID_heater_enable);  // Calling PID function Servo
+
+
+
+
+
+]]></ST>
+    </Implementation>
+    <LineIds Name="MAIN">
+      <LineId Id="454" Count="0" />
+      <LineId Id="396" Count="3" />
+      <LineId Id="556" Count="2" />
+      <LineId Id="551" Count="0" />
+      <LineId Id="553" Count="2" />
+      <LineId Id="563" Count="0" />
+      <LineId Id="562" Count="0" />
+      <LineId Id="400" Count="4" />
+      <LineId Id="546" Count="0" />
+      <LineId Id="487" Count="1" />
+      <LineId Id="628" Count="0" />
+      <LineId Id="601" Count="0" />
+      <LineId Id="549" Count="0" />
+      <LineId Id="510" Count="2" />
+      <LineId Id="509" Count="0" />
+      <LineId Id="494" Count="0" />
+      <LineId Id="629" Count="0" />
+      <LineId Id="495" Count="0" />
+      <LineId Id="514" Count="0" />
+      <LineId Id="521" Count="0" />
+      <LineId Id="622" Count="0" />
+      <LineId Id="515" Count="3" />
+      <LineId Id="630" Count="0" />
+      <LineId Id="522" Count="0" />
+      <LineId Id="548" Count="0" />
+      <LineId Id="523" Count="3" />
+      <LineId Id="529" Count="0" />
+      <LineId Id="527" Count="0" />
+      <LineId Id="520" Count="0" />
+      <LineId Id="531" Count="0" />
+      <LineId Id="631" Count="0" />
+      <LineId Id="564" Count="0" />
+      <LineId Id="566" Count="1" />
+      <LineId Id="569" Count="0" />
+      <LineId Id="568" Count="0" />
+      <LineId Id="570" Count="1" />
+      <LineId Id="632" Count="0" />
+      <LineId Id="576" Count="0" />
+      <LineId Id="625" Count="0" />
+      <LineId Id="577" Count="0" />
+      <LineId Id="618" Count="0" />
+      <LineId Id="581" Count="0" />
+      <LineId Id="579" Count="0" />
+      <LineId Id="582" Count="1" />
+      <LineId Id="633" Count="0" />
+      <LineId Id="589" Count="0" />
+      <LineId Id="584" Count="4" />
+      <LineId Id="573" Count="0" />
+      <LineId Id="590" Count="0" />
+      <LineId Id="634" Count="0" />
+      <LineId Id="591" Count="0" />
+      <LineId Id="572" Count="0" />
+      <LineId Id="595" Count="0" />
+      <LineId Id="592" Count="1" />
+      <LineId Id="565" Count="0" />
+      <LineId Id="594" Count="0" />
+      <LineId Id="635" Count="0" />
+      <LineId Id="596" Count="0" />
+      <LineId Id="626" Count="0" />
+      <LineId Id="597" Count="0" />
+      <LineId Id="620" Count="0" />
+      <LineId Id="598" Count="0" />
+      <LineId Id="603" Count="0" />
+      <LineId Id="623" Count="0" />
+      <LineId Id="609" Count="0" />
+      <LineId Id="611" Count="0" />
+      <LineId Id="604" Count="0" />
+      <LineId Id="612" Count="1" />
+      <LineId Id="560" Count="0" />
+      <LineId Id="532" Count="0" />
+      <LineId Id="530" Count="0" />
+      <LineId Id="519" Count="0" />
+      <LineId Id="491" Count="0" />
+      <LineId Id="490" Count="0" />
+      <LineId Id="489" Count="0" />
+      <LineId Id="405" Count="1" />
+      <LineId Id="574" Count="0" />
+      <LineId Id="407" Count="4" />
+      <LineId Id="450" Count="1" />
+      <LineId Id="412" Count="1" />
+      <LineId Id="456" Count="1" />
+      <LineId Id="455" Count="0" />
+      <LineId Id="474" Count="0" />
+      <LineId Id="414" Count="5" />
+      <LineId Id="458" Count="0" />
+      <LineId Id="420" Count="1" />
+      <LineId Id="426" Count="0" />
+      <LineId Id="431" Count="2" />
+      <LineId Id="459" Count="0" />
+      <LineId Id="461" Count="1" />
+      <LineId Id="460" Count="0" />
+      <LineId Id="656" Count="2" />
+      <LineId Id="434" Count="6" />
+      <LineId Id="443" Count="6" />
+      <LineId Id="5" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

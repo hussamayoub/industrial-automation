@@ -1,0 +1,97 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.0">
+  <POU Name="HEATER_PROCESS" Id="{4cf2173f-cf55-4722-85db-81b8b28a4a7c}" SpecialFunc="None">
+    <Declaration><![CDATA[PROGRAM HEATER_PROCESS
+VAR CONSTANT
+	nTfOrder : USINT := 2;
+	nNumOrder : USINT :=2;
+	nDenOrder : USINT :=2;
+END_VAR
+VAR
+	aNumArray    : ARRAY[0..nNumOrder] OF FLOAT; //numerator
+	aDenArray    : ARRAY[0..nDenOrder] OF FLOAT; //denumerator
+	aStructTfData: ARRAY[0..nTfOrder]  OF ST_CTRL_TRANSFERFUNCTION_1_DATA;
+	eMode : E_CTRL_MODE;
+	stParams : ST_CTRL_TRANSFERFUNCTION_1_PARAMS;
+	eErrorId : E_CTRL_ERRORCODES;
+	bError : BOOL;
+	fbHeater_Tf : FB_CTRL_TRANSFERFUNCTION_1;
+	bInit : BOOL := TRUE;
+	Tf_In : FLOAT := 0;
+	Setpoint_Heater :INT;
+	Tf_Heater_Output : LREAL;
+
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[// IA _Cs4  2019
+// O.E Figaroa
+// Transferfunction Heater
+//                  5
+///  G(s)=  ---------------------    [ Temp / Temp ]
+//          256 s^2 + 100 s + 5
+//= = = = = = = = = = = = = = = = 
+// Discrete transfer function
+//
+//
+//          9.753E-07 z + 9.74E-07
+// G(z)=  ----------------------
+//          z^2 - 1.996 z + 0.9961
+//
+// Obtained coefficients in long formats due accuracy
+//
+// numerator =    1.0e-06 * [0   0.975292016341129   0.974022931328863]
+// denumerator = [1.000000000000000  -1.996099420155170   0.996101369470118]
+
+IF bInit THEN
+// = numerator ===
+aNumArray[0] := 0.974022931328863 * 1E-06;
+aNumArray[1] := 0.975292016341129 * 1E-06;
+aNumArray[2] := 0.000;
+// = denumerator
+aDenArray[0] := 0.996101369470118;
+aDenArray[1] := -1.996099420155170;
+aDenArray[2] := 1.00000;
+stParams.tTaskCycleTime := T#10MS;
+stParams.tCtrlCycleTime := T#10MS;
+stParams.nOrderOfTheTransferfunction := nTfOrder;
+eMode := eCTRL_MODE_ACTIVE;
+bInit := FALSE;
+END_IF
+stParams.pNumeratorArray_ADR := ADR(aNumArray);
+stParams.nNumeratorArray_SIZEOF := SIZEOF(aNumArray);
+stParams.pDenominatorArray_ADR := ADR(aDenArray);
+stParams.nDenominatorArray_SIZEOF := SIZEOF(aDenArray);
+stParams.pTransferfunction1Data_ADR := ADR(aStructTfData);
+stParams.nTransferfunction1Data_SIZEOF := SIZEOF(aStructTfData);
+// Execute TF 
+fbHeater_Tf (fIn := main.pidHeater.MV_out,
+eMode := eMode,
+stParams := stParams,
+fOut => Tf_Heater_Output,
+eErrorId => eErrorId,
+bError => bError);
+//
+GVL_IO.Output_Heater:=LREAL_TO_REAL(fbHeater_Tf.fOut);
+IF fbHeater_Tf.fOut <= 0 THEN
+	GVL_IO.Output_Heater:=0;
+END_IF]]></ST>
+    </Implementation>
+    <LineIds Name="HEATER_PROCESS">
+      <LineId Id="382" Count="0" />
+      <LineId Id="497" Count="1" />
+      <LineId Id="383" Count="3" />
+      <LineId Id="445" Count="0" />
+      <LineId Id="492" Count="0" />
+      <LineId Id="491" Count="0" />
+      <LineId Id="494" Count="1" />
+      <LineId Id="493" Count="0" />
+      <LineId Id="496" Count="0" />
+      <LineId Id="442" Count="0" />
+      <LineId Id="389" Count="31" />
+      <LineId Id="520" Count="0" />
+      <LineId Id="68" Count="0" />
+      <LineId Id="467" Count="2" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

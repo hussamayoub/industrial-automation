@@ -1,0 +1,134 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.0">
+  <POU Name="TANKLEVEL" Id="{7d99a484-c811-47ca-b0f5-ff178effa6fa}" SpecialFunc="None">
+    <Declaration><![CDATA[PROGRAM TANKLEVEL
+VAR CONSTANT
+	L_S1:REAL :=  5.00 ;
+	L_S2:REAL := 60.00 ;
+	L_S3:REAL := 80.00 ;	
+END_VAR
+
+VAR
+	Plant:FirstOrder;
+	fbNoise : FB_CTRL_NOISE_GENERATOR ;
+	fbNoiseParams : ST_CTRL_NOISE_GENERATOR_PARAMS ;
+	noise_level : LREAL ;
+	fill_ValveA,fill_ValveB,Drain_ValveC: BOOL;
+	fbdelayOFF:TOF;
+// ---	
+    fbFill, fbDrain : R_TRIG;
+	fbFillOff, fbDrainOff :F_TRIG;
+	currConstTime: REAL := 15;
+	spLevel : REAL:=0;
+
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[// Generate sensor noise
+fbNoiseParams . tCtrlCycleTime := T#10MS ;
+fbNoiseParams . tTaskCycleTime := T#10MS ;
+fbNoiseParams . fAmplitude := 1.5 ;
+fbNoise ( fManSyncValue := 1 , eMode := 2 , stParams := fbNoiseParams ) ;
+noise_level := fbNoise.fOut ;
+// Valves
+Fill_ValveA := GVL_IO.ValveA ;
+Fill_ValveB := GVL_IO.ValveB ;
+Drain_ValveC := GVL_IO.ValveC ;
+
+fbFill(clk := ( Fill_ValveA XOR Fill_ValveB ) AND NOT Drain_ValveC ) ;
+fbFillOff(clk := Fill_ValveA XOR Fill_ValveB ) ;
+fbDrain(clk := Drain_ValveC );
+fbDrainOff(clk := Drain_ValveC );
+fbdelayOFF(IN:=(GVL_IO.ValveA OR GVL_IO.ValveB OR GVL_IO.ValveC),PT:=T#1S);
+
+IF fbFill.Q THEN
+	spLevel:=150;
+	currConstTime:=15;
+END_IF
+IF fbFillOff.Q THEN
+	spLevel:=plant.fBOut;
+	
+END_IF
+IF fbDrain.Q THEN
+	currConstTime:=5;
+    spLevel:=1;	
+END_IF
+
+IF fbDrainOff.Q THEN
+	spLevel := GVL_IO.TankLevelSensor ;
+END_IF
+
+Plant(fBIn:= spLevel,Gain := 1,Tconstant := currConstTime);
+
+GVL_IO.TankLevelSensor:=plant.fBOut;
+
+IF (fbdelayOFF.Q) THEN
+	GVL_IO.TankLevelSensor:=LREAL_TO_REAL(plant.fBOut +noise_level);
+END_IF
+GVL_IO.Level_S1:=TRUE;
+GVL_IO.Level_S2:=TRUE;
+GVL_IO.Level_S3:=TRUE;
+
+IF GVL_IO.TankLevelSensor > L_S1 THEN
+	GVL_IO.Level_S1:=FALSE;
+END_IF
+IF GVL_IO.TankLevelSensor > L_S2 THEN
+	GVL_IO.Level_S2:=FALSE;
+END_IF
+IF GVL_IO.TankLevelSensor > L_S3 THEN
+	GVL_IO.Level_S3:=FALSE;
+END_IF
+
+ //
+
+ 
+]]></ST>
+    </Implementation>
+    <LineIds Name="TANKLEVEL">
+      <LineId Id="5" Count="0" />
+      <LineId Id="21" Count="1" />
+      <LineId Id="24" Count="1" />
+      <LineId Id="23" Count="0" />
+      <LineId Id="95" Count="0" />
+      <LineId Id="98" Count="1" />
+      <LineId Id="96" Count="0" />
+      <LineId Id="94" Count="0" />
+      <LineId Id="26" Count="0" />
+      <LineId Id="28" Count="2" />
+      <LineId Id="58" Count="0" />
+      <LineId Id="32" Count="0" />
+      <LineId Id="31" Count="0" />
+      <LineId Id="33" Count="0" />
+      <LineId Id="35" Count="2" />
+      <LineId Id="40" Count="0" />
+      <LineId Id="38" Count="1" />
+      <LineId Id="45" Count="1" />
+      <LineId Id="48" Count="0" />
+      <LineId Id="47" Count="0" />
+      <LineId Id="42" Count="0" />
+      <LineId Id="41" Count="0" />
+      <LineId Id="43" Count="1" />
+      <LineId Id="50" Count="0" />
+      <LineId Id="49" Count="0" />
+      <LineId Id="92" Count="0" />
+      <LineId Id="52" Count="0" />
+      <LineId Id="93" Count="0" />
+      <LineId Id="53" Count="0" />
+      <LineId Id="55" Count="1" />
+      <LineId Id="59" Count="0" />
+      <LineId Id="62" Count="1" />
+      <LineId Id="65" Count="0" />
+      <LineId Id="64" Count="0" />
+      <LineId Id="66" Count="1" />
+      <LineId Id="70" Count="1" />
+      <LineId Id="69" Count="0" />
+      <LineId Id="73" Count="1" />
+      <LineId Id="72" Count="0" />
+      <LineId Id="68" Count="0" />
+      <LineId Id="61" Count="0" />
+      <LineId Id="60" Count="0" />
+      <LineId Id="54" Count="0" />
+      <LineId Id="51" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

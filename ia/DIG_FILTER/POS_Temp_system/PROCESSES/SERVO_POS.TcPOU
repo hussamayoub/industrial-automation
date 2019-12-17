@@ -1,0 +1,110 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.0">
+  <POU Name="SERVO_POS" Id="{23781ed3-9de5-40d0-92ee-d7d508a772fe}" SpecialFunc="None">
+    <Declaration><![CDATA[PROGRAM SERVO_POS
+VAR CONSTANT
+	nTfOrder : USINT := 2;
+	nNumOrder : USINT :=2;
+	nDenOrder : USINT :=2;
+END_VAR
+VAR
+	aNumArray    : ARRAY[0..nNumOrder] OF FLOAT; //numerator
+	aDenArray    : ARRAY[0..nDenOrder] OF FLOAT; //denumerator
+	aStructTfData: ARRAY[0..nTfOrder]  OF ST_CTRL_TRANSFERFUNCTION_1_DATA;
+	eMode : E_CTRL_MODE;
+	stParams : ST_CTRL_TRANSFERFUNCTION_1_PARAMS;
+	eErrorId : E_CTRL_ERRORCODES;
+	bError : BOOL;
+	fbServoX_Tf : FB_CTRL_TRANSFERFUNCTION_1;
+	bInit : BOOL := TRUE;
+	bPosError:BOOL;
+	Tf_Output : LREAL;
+	Servo_ERR : R_TRIG;
+
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[// IA _Cs4  2019
+// O.E Figaroa
+// Transferfunction Servo Motor X s-domain
+//              20
+//  Gc =    -----------   [ Theta/u]
+//           0.5s^2 + s 
+//
+//= = Discrete or z-domain with  Ts = 0.01 s = = 
+//          short format
+//        0.001987 z + 0.001974
+// Gd =  ----------------------   with Ts=0.01 s
+//        z^2 - 1.98 z + 0.9802       
+// 
+//// coefficients obtained by Matlab in long format:
+//
+// numz =  [0   0.001986733067553   0.001973532271096]     
+// denz =  [1.000000000000000 -1.980198673306755   0.980198673306755]
+// ==
+
+//========================================
+IF bInit THEN
+// = numerator ===
+aNumArray[0] := 0.001973532271096; 
+aNumArray[1] := 0.001986733067553; 
+aNumArray[2] := 0.000;
+// = denumerator
+aDenArray[0] := 0.980198673306755;
+aDenArray[1] := -1.980198673306755;
+aDenArray[2] := 1.0;
+stParams.tTaskCycleTime := T#10MS;
+stParams.tCtrlCycleTime := T#10MS;
+stParams.nOrderOfTheTransferfunction := nTfOrder;
+eMode := eCTRL_MODE_ACTIVE;
+bInit := FALSE;
+END_IF
+stParams.pNumeratorArray_ADR := ADR(aNumArray);
+stParams.nNumeratorArray_SIZEOF := SIZEOF(aNumArray);
+stParams.pDenominatorArray_ADR := ADR(aDenArray);
+stParams.nDenominatorArray_SIZEOF := SIZEOF(aDenArray);
+stParams.pTransferfunction1Data_ADR := ADR(aStructTfData);
+stParams.nTransferfunction1Data_SIZEOF := SIZEOF(aStructTfData);
+
+// Execute TF 
+
+fbServoX_Tf (fIn :=main.pidServo.MV_out,
+eMode := eMode,
+stParams := stParams,
+fOut => Tf_Output,
+eErrorId => eErrorId,
+bError => bError);
+
+GVL_IO.Output_ServoX:=LREAL_TO_REAL(fbServoX_Tf.fOut);	
+
+Servo_ERR(CLK:=(ABS(GVL_IO.Output_ServoX) > 50),Q=>GVL_IO.xGenCtrl_Error);]]></ST>
+    </Implementation>
+    <LineIds Name="SERVO_POS">
+      <LineId Id="475" Count="0" />
+      <LineId Id="474" Count="0" />
+      <LineId Id="301" Count="3" />
+      <LineId Id="434" Count="0" />
+      <LineId Id="305" Count="0" />
+      <LineId Id="389" Count="0" />
+      <LineId Id="432" Count="1" />
+      <LineId Id="411" Count="0" />
+      <LineId Id="410" Count="0" />
+      <LineId Id="386" Count="0" />
+      <LineId Id="454" Count="0" />
+      <LineId Id="306" Count="0" />
+      <LineId Id="311" Count="0" />
+      <LineId Id="390" Count="0" />
+      <LineId Id="513" Count="0" />
+      <LineId Id="518" Count="0" />
+      <LineId Id="312" Count="20" />
+      <LineId Id="388" Count="0" />
+      <LineId Id="333" Count="0" />
+      <LineId Id="341" Count="0" />
+      <LineId Id="497" Count="5" />
+      <LineId Id="496" Count="0" />
+      <LineId Id="68" Count="0" />
+      <LineId Id="505" Count="0" />
+      <LineId Id="519" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>
