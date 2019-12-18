@@ -19,6 +19,12 @@ VAR
 	Counter : DINT;
 	MoveTank : BOOL;
 	StateString : STRING;
+	TotalTime : TON;
+	TotalStart : BOOL;
+	TotalTimeValue : TIME;
+	
+
+	
 	
 END_VAR
 ]]></Declaration>
@@ -50,9 +56,11 @@ CASE States OF                       							// Sequence State ( ready, etc etc e
 		HeaterON := FALSE;
 		IF GVL_IO.StartPr THEN 							// check if start button pressed
 			States := SeqState.Fill_A;							// go to state Fill A
+			
 		END_IF
 		
 	SeqState.Fill_A:											// sequence state fill A
+		TotalStart := TRUE;
 		StateString := 'Fill A';
 		GVL_IO .ValveA:=TRUE;  									// open valve A				
 		IF NOT GVL_IO.Level_S2 THEN 							// check if level reached s2
@@ -84,7 +92,7 @@ CASE States OF                       							// Sequence State ( ready, etc etc e
 		StateString := 'Move To Drain';
 		MoveTank := TRUE;										// set move tank variable		
 		GVL_IO.SetPoint_ServoX := 30;							// move tank to set point 30
-		IF GVL_IO.Output_ServoX = 30 THEN						// if position reached
+		IF GVL_IO.Output_ServoX > 27 AND GVL_IO.Output_ServoX < 33  THEN						// if position reached
 			MoveTank := FALSE;									// set move tank variable
 			States := SeqState.Drain_1;							// go to drain 1 state
 		END_IF
@@ -110,8 +118,10 @@ CASE States OF                       							// Sequence State ( ready, etc etc e
 		StateString := 'Move To Start';
 		MoveTank := TRUE;										// set move tank variable
 		GVL_IO.SetPoint_ServoX := 0;							// set servo point to 0
-		IF GVL_IO.Output_ServoX = 0 THEN						// if position 0 reached
-			MoveTank := FALSE;									// set move tank variable
+		IF GVL_IO.Output_ServoX > -3 AND GVL_IO.Output_ServoX < 3  THEN
+			MoveTank := FALSE;	
+			TotalTimeValue := TotalTime.ET;								// set move tank variabl
+			TotalStart := FALSE;
 		IF Counter = 2 OR GVL_IO.StopPr THEN			
 			States := SeqState.Ready;
 		END_IF
@@ -123,6 +133,7 @@ CASE States OF                       							// Sequence State ( ready, etc etc e
 	
 		
 		
+		TotalTime (IN:=TotalStart,PT:=T#10M);
 		
 //	
 //
@@ -143,9 +154,12 @@ IF (MoveTank AND NOT GVL_IO.xGenCtrl_Error ) THEN
 	pidServo.Setpoint:=GVL_IO.SetPoint_ServoX;  // Setpoint Servo // put in states
 END_IF
 
-pidServo.Kp:= 0.1;       //  Kp parameter
-// pidServo.Ki:= xxx ; //  Ki parameter
-// pidServo.Kd:= xxx ; //  Kd parameter 
+ pidServo.Kp:= 1.503;       //  Kp parameter
+ pidServo.Ki:= 0.382 ; //  Ki parameter
+ pidServo.Kd:= 0.89 ; //  Kd parameter 
+
+
+
 
 pidServo.MV_max_sat:= 10;    // Maximum output PID to protect the Servo
 pidServo.MV_min_sat:= -10;  // Minimum output PID    ,,     ,,
@@ -163,9 +177,9 @@ END_IF
 IF HeaterON = FALSE THEN
 	pidHeater.Setpoint := 0;
 END_IF
-pidHeater.Kp:= 1;         //  Kp parameter
-// pidHeater.Ki:= xx ;    //  Ki parameter     
-// pidHeater.Kd:= xx ;    //  Kd parameter      
+pidHeater.Kp:= 2;         //  Kp parameter
+ pidHeater.Ki:= 0.161 ;    //  Ki parameter     
+ pidHeater.Kd:= 4.84 ;    //  Kd parameter      
 pidHeater.MV_max_sat:=150;   // Maximum output PID to protect the Heater
 pidHeater.MV_min_sat:= -10;  // Minimum output PID ,,     ,,
 // 
@@ -193,9 +207,12 @@ pidHeater(PID_enable:= PID_heater_enable);  // Calling PID function Servo
       <LineId Id="628" Count="0" />
       <LineId Id="601" Count="0" />
       <LineId Id="549" Count="0" />
-      <LineId Id="510" Count="2" />
+      <LineId Id="510" Count="1" />
+      <LineId Id="677" Count="0" />
+      <LineId Id="512" Count="0" />
       <LineId Id="509" Count="0" />
       <LineId Id="494" Count="0" />
+      <LineId Id="676" Count="0" />
       <LineId Id="629" Count="0" />
       <LineId Id="495" Count="0" />
       <LineId Id="514" Count="0" />
@@ -241,6 +258,8 @@ pidHeater(PID_enable:= PID_heater_enable);  // Calling PID function Servo
       <LineId Id="626" Count="0" />
       <LineId Id="597" Count="0" />
       <LineId Id="620" Count="0" />
+      <LineId Id="684" Count="0" />
+      <LineId Id="682" Count="0" />
       <LineId Id="598" Count="0" />
       <LineId Id="603" Count="0" />
       <LineId Id="623" Count="0" />
@@ -252,6 +271,7 @@ pidHeater(PID_enable:= PID_heater_enable);  // Calling PID function Servo
       <LineId Id="532" Count="0" />
       <LineId Id="530" Count="0" />
       <LineId Id="519" Count="0" />
+      <LineId Id="683" Count="0" />
       <LineId Id="491" Count="0" />
       <LineId Id="490" Count="0" />
       <LineId Id="489" Count="0" />
@@ -263,7 +283,11 @@ pidHeater(PID_enable:= PID_heater_enable);  // Calling PID function Servo
       <LineId Id="456" Count="1" />
       <LineId Id="455" Count="0" />
       <LineId Id="474" Count="0" />
-      <LineId Id="414" Count="5" />
+      <LineId Id="414" Count="2" />
+      <LineId Id="669" Count="0" />
+      <LineId Id="663" Count="0" />
+      <LineId Id="659" Count="0" />
+      <LineId Id="417" Count="2" />
       <LineId Id="458" Count="0" />
       <LineId Id="420" Count="1" />
       <LineId Id="426" Count="0" />
