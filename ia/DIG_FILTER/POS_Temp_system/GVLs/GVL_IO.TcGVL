@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.2">
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.0">
   <GVL Name="GVL_IO" Id="{86dbb402-8ae0-469d-937b-93eb02f87750}">
     <Declaration><![CDATA[{attribute 'qualified_only'}
 VAR_GLOBAL
@@ -15,7 +15,7 @@ VAR_GLOBAL
 	StartPr, StopPr           :BOOL;      // Start and Stop Process Buttons
 	Level_S1,Level_S2,Level_S3:BOOL;      // Level Sensors (digital sensors)
     xGenCtrl_Error            :BOOL;      // General Error due SERVO or HEATER Control    
-	Stirrer					  :BOOL;      //stirrer Set
+	Stirrer					  :BOOL;      // Stirrer Set
 	END_VAR]]></Declaration>
   </GVL>
 </TcPlcObject>

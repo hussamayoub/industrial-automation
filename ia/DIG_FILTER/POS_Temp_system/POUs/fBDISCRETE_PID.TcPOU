@@ -1,9 +1,8 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.2">
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.0">
   <POU Name="fBDISCRETE_PID" Id="{6d63eba5-46e9-49ad-b783-0b876d499556}" SpecialFunc="None">
     <Declaration><![CDATA[FUNCTION_BLOCK fBDISCRETE_PID
 VAR_INPUT
-	
 	Setpoint:REAL;         // SetPoint
     Kp:REAL;               // Kp  Proportional gain
 	Ki:REAL;               // Ki  Integrated gain
@@ -24,10 +23,10 @@ VAR
 	T2:DWORD;
 	Perr, Perr1, Perr2 : REAL ;
 	A,B,C : REAL;
-	Tsample:REAL;
 	prevMV_out:REAL;
-	
-	pidServo: INT;
+	Tsample:REAL;
+
+	pidServo: INT; // Change
 END_VAR
 ]]></Declaration>
     <Implementation>
@@ -43,12 +42,13 @@ Perr:= Setpoint - Yprocess; // Current error e[k]
 // Constant Coefficients including the Parameters Kp , Ki, Kd and Tsample
 //        Your PID Controller algorithm starts here
 //
+
 A := (Kp + Ki * (Tsample/2) + (Kd/Tsample));
 B := (-Kp + Ki *(Tsample/2) - (2*Kd/Tsample));
 C :=  Kd/Tsample;
 
-Mv_out:= prevMV_out +  A*Perr + B * Perr1 + C * Perr2;                // PID Controller
-//
+Mv_out:= prevMV_out +  A*Perr + B * Perr1 + C * Perr2;	// PID Controller
+// Instead of old P code
 //MV_out:=  Kp * Perr;  // P-Controller
 
 // Update  samples 
@@ -83,11 +83,15 @@ END_IF]]></ST>
       <LineId Id="280" Count="0" />
       <LineId Id="187" Count="1" />
       <LineId Id="191" Count="0" />
+      <LineId Id="356" Count="0" />
       <LineId Id="320" Count="1" />
       <LineId Id="316" Count="0" />
       <LineId Id="309" Count="0" />
-      <LineId Id="192" Count="2" />
-      <LineId Id="200" Count="4" />
+      <LineId Id="192" Count="0" />
+      <LineId Id="358" Count="0" />
+      <LineId Id="194" Count="0" />
+      <LineId Id="357" Count="0" />
+      <LineId Id="201" Count="3" />
       <LineId Id="325" Count="0" />
       <LineId Id="324" Count="0" />
       <LineId Id="207" Count="11" />

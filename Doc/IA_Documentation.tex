@@ -1,0 +1,172 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Diaz Essay
+% LaTeX Template
+% Version 2.0 (13/1/19)
+%
+% This template originates from:
+% http://www.LaTeXTemplates.com
+%
+% Authors:
+% Vel (vel@LaTeXTemplates.com)
+% Nicolas Diaz (nsdiaz@uc.cl)
+%
+% License:
+% CC BY-NC-SA 3.0 (http://creativecommons.org/licenses/by-nc-sa/3.0/)
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Document Authors:
+% Thijs van Boesschoten (t.van.boesschoten@protonmail.com)
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%----------------------------------------------------------------------------------------
+%	PACKAGES AND OTHER DOCUMENT CONFIGURATIONS
+%----------------------------------------------------------------------------------------
+
+\documentclass[11pt]{essayStyle} % Font size (can be 10pt, 11pt or 12pt)
+
+%----------------------------------------------------------------------------------------
+%	TITLE SECTION
+%----------------------------------------------------------------------------------------
+
+\title{\textbf{Industrial Automation} \\ {\Large\itshape Position and Temperature}} % Title and subtitle
+
+\author{\textbf{Thijs van Boesschoten, Hussam Ayoub, Niousha Moshirzedeh} \\ \textit{Fontys University of Applied sciences}} % Author and institution
+
+\date{\today} % Date, use \date{} for no date
+
+%----------------------------------------------------------------------------------------
+
+\begin{document}
+
+\maketitle % Print the title section
+
+%----------------------------------------------------------------------------------------
+%	ABSTRACT AND KEYWORDS
+%----------------------------------------------------------------------------------------
+
+%\renewcommand{\abstractname}{Summary} % Uncomment to change the name of the abstract to something else
+
+\begin{abstract}
+This document will go through the process of automating an industrial process using industrial equipment in the form of PLCs.\\
+This will entail the tools used for development, the design of the application and breakdown of the problem in states, using matlab to generate values for the PID system used in the program and binding it together using the Structured Text programming language.
+\end{abstract}
+
+\vspace{30pt} % Vertical whitespace between the abstract and first section
+
+%----------------------------------------------------------------------------------------
+%	Version Management
+%----------------------------------------------------------------------------------------
+
+\begin{table}[h] % [h] forces the table to be output where it is defined in the code (it suppresses floating)
+	\centering
+	\begin{tabular}{l l r}
+		\multicolumn{2}{c}{Version Management} \\
+		\cmidrule(r){1-3}
+		Version & Changes & Reason \\
+		\midrule
+		v0.1 & All & First Draft \\
+		\bottomrule
+	\end{tabular}
+\end{table}
+
+%----------------------------------------------------------------------------------------
+%	Table of Contents
+%----------------------------------------------------------------------------------------
+
+\tableofcontents
+
+\pagebreak
+
+%----------------------------------------------------------------------------------------
+%	ESSAY BODY
+%----------------------------------------------------------------------------------------
+
+\section{Introduction}
+
+For this project, a company assigned us to automate the process of a movable tank. The tank will be used to contain and mix liquids(chemicals) in a temperature controlled environment. 
+
+The general tasks that the system should be able to fulfill are:
+\begin{enumerate}
+	\item Fill liquid A into the tank.
+	\item Fill liquid B into the tank.
+	\item Stir liquids A\&B while heated to a temperature setpoint.
+	\item Move the tank to a position setpoint.
+	\item Empty the tank.
+	\item Return the tank to the default position.
+\end{enumerate}
+
+
+To fulfill these functionalities the following hardware is installed and can be manipulated by our program:
+\begin{itemize}
+	\item Value A, B \& C
+	\item Stirrer
+	\item Level Switch S1, S2 \& S3
+	\item Heater
+	\item Temperature Sensor
+	\item Servo Motor
+\end{itemize}
+
+\begin{figure}[h]
+	\includegraphics[width=\linewidth]{Tanks.png}
+	\caption{Production set-up}
+\end{figure}
+
+%------------------------------------------------
+
+\section{Tools \& Equipment}
+For the development of our program, Twincat 3.0 will be used as the work that is provided will be in the form of a Twincat 3.0 archived project. Extracting this project shows that the basics like I/O and a base program has already been implemented. However this implementation is very crude and can use more refinement. In this manner, the first thing to be improved will be the visualization. 
+
+\begin{figure}[h]
+	\includegraphics[width=\linewidth]{OldVisual.png}
+	\caption{Old Visualization}
+\end{figure}
+
+Currently the UI is rather cluttered and not all information like the valves and stirrer are displayed. 
+
+\begin{figure}[h]
+	\includegraphics[width=\linewidth]{NewVisual.png}
+	\caption{State Diagram of the process}
+\end{figure}
+
+As such a new visualization has been created to show all input information and the states of the outputs. 
+
+%------------------------------------------------
+
+\section{Program Design}
+
+Having set the parameters of the project and a way to visualize the result, the process is the next thing in line. To start of has a state diagram been made to show the manner at which the program should operate given the criteria.
+
+\begin{figure}[h]
+	\includegraphics[width=\linewidth]{StateDiagram.png}
+	\caption{New Visualization}
+\end{figure}
+
+Most of this code has already been implemented, the main section that needed to be filled in was the MAIN section which holds the state of the program, and the PID controller (fBDISCRETE$\_$PID) that needs to be completed.
+
+%------------------------------------------------
+
+\section{PID \& Matlab}
+Starting with the PID controller needed for the movement of the tank to go fluently, the first part is to understand PID.
+
+%------------------------------------------------
+
+\section{Implementation}
+
+%------------------------------------------------
+
+\section{Conclusion}
+
+%----------------------------------------------------------------------------------------
+%	BIBLIOGRAPHY
+%----------------------------------------------------------------------------------------
+
+\bibliographystyle{unsrt}
+
+\bibliography{refrences.bib}
+
+%----------------------------------------------------------------------------------------
+
+\end{document}

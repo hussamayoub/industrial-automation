@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.2">
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.0">
   <Visu Name="UserInterface" Id="{8126f8ab-e6ef-48b6-9ba2-149e11247293}">
     <XmlArchive>
       <Data>
@@ -3010,7 +3010,7 @@
                     </o>
                     <o>
                       <v n="Id">550940142L</v>
-                      <v n="Value">243</v>
+                      <v n="Value" t="Int16">243</v>
                     </o>
                     <o>
                       <v n="Id">1473355128L</v>
@@ -4361,10 +4361,10 @@
               <d n="FbMethods" t="CaseInsensitiveHashtable" ckt="String" cvt="Guid">
                 <v>FB_Init</v>
                 <v>a9dda456-4a22-4f60-a216-267a2782d40d</v>
-                <v>FB_Exit</v>
-                <v>59a018b1-465b-483f-a4de-c273d9e341fe</v>
                 <v>FB_Reinit</v>
                 <v>bd035fc3-ff1d-4514-921e-7b53a87f6a12</v>
+                <v>FB_Exit</v>
+                <v>59a018b1-465b-483f-a4de-c273d9e341fe</v>
               </d>
               <v n="FbName">"NotImportant"</v>
               <v n="FbGuid">{6bc91cbd-d00c-42fc-a2fb-44dedbc912e2}</v>
