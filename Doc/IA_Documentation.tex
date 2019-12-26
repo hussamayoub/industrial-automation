@@ -26,7 +26,7 @@
 %----------------------------------------------------------------------------------------
 
 \documentclass[11pt]{essayStyle} % Font size (can be 10pt, 11pt or 12pt)
-
+\usepackage{listings}
 %----------------------------------------------------------------------------------------
 %	TITLE SECTION
 %----------------------------------------------------------------------------------------
@@ -119,6 +119,8 @@ To fulfill these functionalities the following hardware is installed and can be 
 \section{Tools \& Equipment}
 For the development of our program, Twincat 3.0 will be used as the work that is provided will be in the form of a Twincat 3.0 archived project. Extracting this project shows that the basics like I/O and a base program has already been implemented. However this implementation is very crude and can use more refinement. In this manner, the first thing to be improved will be the visualization. 
 
+
+
 \begin{figure}[h]
 	\includegraphics[width=\linewidth]{OldVisual.png}
 	\caption{Old Visualization}
@@ -149,15 +151,102 @@ Most of this code has already been implemented, the main section that needed to 
 %------------------------------------------------
 
 \section{PID \& Matlab}
-Starting with the PID controller needed for the movement of the tank to go fluently, the first part is to understand PID.
+Starting with the PID controller needed for the movement of the tank to go fluently, the first part is to understand the system.
+
+In the code is a transfer function given of $\frac{20}{0.5s^{2}+s}$. The transfer function can be used 
+in Matlab with a PID controller to get the P, I and D values for out system. 
+\begin{figure}[h]
+	\includegraphics[width=\linewidth]{PIDTunedServo.png}
+	\caption{PID Tuning for Servo}
+\end{figure}
+
+As can be seen in the image, the values of $P = 1.50336317116248$, $I = 0.382023245720186$ and $D = 0.890877057925314$ give an output that is fast and provides an overshoot that is within the 2\% overshoot allowed.
+
+\begin{figure}[h]
+	\includegraphics[width=\linewidth]{PIDTunedHeater.png}
+	\caption{PID Tuning for Heater}
+\end{figure}
+
+Doing the same for the heater yields the values $P=2$, $I=0.161$ and finally $D=4.84$.
+
+These values for the PID controllers come in useful, however can be utilized better by programmers in the "Advanced" PID - Algorithm \cite{Oswald:ia} form. $A=(k_{p}+k_{i}\frac{T}{2}+\frac{k_{d}}{T})$, $B=(-k_{p}+k_{i}\frac{T}{2}-\frac{2k_{d}}{T})$ and finally $C=\frac{k_{d}}{T}$
 
 %------------------------------------------------
 
 \section{Implementation}
+With all the theoretical pieces together it is time to put things into action, starting of with the state machine in the MAIN file. Simply by using the following states programmed in:
+\lstset{language=C++}
+\begin{lstlisting}
+TYPE SeqState :
+(
+	Ready,
+	Fill_A,
+	Fill_B,
+	Heating,
+	ToUnload,
+	MovingToDrain,
+	MovingToStart,
+	Drain_1,
+	Drain_2
+);
+END_TYPE
+\end{lstlisting}
 
-%------------------------------------------------
+These programmed states can then be used in the main to go through in the form of a switch statement:
 
-\section{Conclusion}
+\begin{lstlisting}
+CASE States OF // Sequence State
+SeqState.Ready: 
+	StateString := 'Ready!';
+	Counter := 0; // sequence counter
+	HeaterON := FALSE;
+	IF GVL_IO.StartPr THEN // check if start button pressed
+		States := SeqState.Fill_A; // go to state Fill A
+	END_IF
+	
+SeqState.Fill_A: // sequence state fill A
+	TotalStart := TRUE;
+	...
+\end{lstlisting}
+
+Activating the Servo is done as follows:
+
+\begin{lstlisting}
+//
+// *************  Servo with PID Controller  **************
+//
+IF (MoveTank AND NOT GVL_IO.xGenCtrl_Error ) THEN
+	pidServo.Setpoint:=GVL_IO.SetPoint_ServoX;
+END_IF
+
+pidServo.Kp:= 1.503; // Kp parameter
+ pidServo.Ki:= 0.382 ; // Ki parameter
+ pidServo.Kd:= 0.89 ; // Kd parameter 
+
+pidServo.MV_max_sat:= 10; // To protect Servo
+pidServo.MV_min_sat:= -10; 
+pidServo.xExt_Error:= Gvl_IO.xGenCtrl_Error;
+pidServo.Yprocess:= LREAL_TO_REAL(GVL_IO.Output_ServoX);
+pidServo(PID_enable:=PID_Servo_enable); 
+\end{lstlisting}
+
+This then leads into the fBDISCRETE\_PID function block which does the following to utilize the PID controller:
+
+\begin{lstlisting}
+Perr:= Setpoint - Yprocess;
+
+A := (Kp + Ki * (Tsample/2) + (Kd/Tsample));
+B := (-Kp + Ki *(Tsample/2) - (2*Kd/Tsample));
+C :=  Kd/Tsample;
+
+Mv_out:= prevMV_out +  A*Perr + B * Perr1 + C * Perr2;
+
+// Update  samples 
+prevMV_out := MV_out; // prevMV_out = MV_out[k-1] 
+Perr2 := Perr1;       // e[k-2]
+Perr1 := Perr;        // e[k-1]
+
+\end{lstlisting}
 
 %----------------------------------------------------------------------------------------
 %	BIBLIOGRAPHY
